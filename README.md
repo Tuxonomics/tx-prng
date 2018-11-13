@@ -20,7 +20,19 @@ they are used internally.
 In the following only the C namespace is used.
 
 
-## List of Pseudo Random Number Generators (PRNGs)
+## The Pseudo Random Number Generator (PRNG) Interface
+Every PRNG implemented will offer four basic functions:
+* Advancing to the next state: `PRNG_Next`.
+* Advancing to the next state and converting it to a 64bit float number on the
+interval [0,1]: `PRNG_NextFloat`.
+* Jumping ahead which is equivalent to calling `PRNG_Next` a certain number of
+times: `PRNG_Jump`.
+* Setting the seed: `PRNG_Seed`.
+
+
+## List of PRNGs
+All PRNGs used here will work on an output of unsigned 64bit integers. The
+state of the PRNGs will be at least 64bit large.
 
 * `xorshift1024*` ([here](http://vigna.di.unimi.it/ftp/papers/xorshift.pdf)) is 
 given as `struct PRNG_Xorshift1024Star`.
