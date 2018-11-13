@@ -39,5 +39,5 @@ is only used for seeding. It is given as `struct prng_sm64`.
 
 
 ## Examples
-C as well as C++ examples can be found in the `examples` directory.
+[C](https://github.com/Tuxonomics/prng-c/blob/master/examples/example_1.c) as well as [C++](https://github.com/Tuxonomics/prng-c/blob/master/examples/example_1.cpp) examples can be found in the `examples` directory.
 
