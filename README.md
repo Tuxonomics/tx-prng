@@ -14,7 +14,7 @@ data structures are prefixed by `PRNG_` if it is meant to be a consumer API or
 by `prng_` if it is meant to be used internally.
 
 In C++ the namespace `prng` is set. All functions and complex data structures
-are written in Pascal case if they are meant for consumer APIs and camelCase if
+are written in **PascalCase** if they are meant for consumer APIs and **camelCase** if
 they are used internally.
 
 In the following only the C namespace is used.
