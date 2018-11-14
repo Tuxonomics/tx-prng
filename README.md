@@ -34,8 +34,6 @@ In the following only the C namespace is used.
 ## [The Pseudo Random Number Generator (PRNG) Interface](#prng)
 Every PRNG implemented will offer four basic functions:
 * Advancing to the next state: `PRNG_Next`.
-* Advancing to the next state and converting it to a 64bit float number on the
-interval [0,1]: `PRNG_NextFloat`.
 * Jumping ahead which is equivalent to calling `PRNG_Next` a certain number of
 times: `PRNG_Jump`.
 * Setting the seed: `PRNG_Seed`.
@@ -44,19 +42,16 @@ times: `PRNG_Jump`.
 ## [List of PRNGs](#list-prngs)
 All PRNGs used here will work on an output of unsigned 64bit integers. The
 state of the PRNGs will be at least 64bit large.
-
 * `xorshift1024*` ([here](http://vigna.di.unimi.it/ftp/papers/xorshift.pdf)) is 
 given as `struct PRNG_Xorshift1024Star`.
-
 * `xorshiro256**` ([here](http://xoshiro.di.unimi.it/xoshiro256starstar.c)) is
 given as `struct PRNG_Xorshiro256StarStar`.
-
 * `splitmix64` ([here](https://github.com/svaarala/duktape/blob/master/misc/splitmix64.c))
 is only used for seeding. It is given as `struct prng_sm64`.
 
 
 ## [List of Univariate Distributions](#univariate)
-
+* Uniform U[0,1] distribution: `PRNG_Uniform`.
 * Normal distribution with mean 0 and standard deviation 1: `PRNG_BoxMuller`.
 
 

@@ -153,9 +153,6 @@ u64 PF2(rotl)(const u64 x, i32 k) {
 #define PRNG_NEXT_FUNC(name) Inline u64 name(void *state)
 typedef u64 PRNG_nextFunc(void *state);
 
-#define PRNG_NEXT_FLOAT_FUNC(name) Inline f64 name(void *state)
-typedef f64 PRNG_nextFloatFunc(void *state);
-
 #define PRNG_JUMP_FUNC(name) void name(void *state)
 typedef void PRNG_jumpFunc(void *state);
 
@@ -171,7 +168,6 @@ struct PF(Generator) {
     void *state;
 
     PRNG_nextFunc      *next;
-    PRNG_nextFloatFunc *nextFloat;
     PRNG_jumpFunc      *jump;
     PRNG_seedFunc      *seed;
 };
@@ -183,13 +179,6 @@ Inline
 u64 PF(Next)( PRNG g )
 {
     return g.next( g.state );
-}
-
-
-Inline
-f64 PF(NextFloat)( PRNG g )
-{
-    return g.nextFloat( g.state );
 }
 
 
@@ -274,14 +263,6 @@ PRNG_NEXT_FUNC(PF2(Xorshift1024StarNext))
 }
 
 
-PRNG_NEXT_FLOAT_FUNC(PF2(Xorshift1024StarNextFloat))
-{
-    u64 x = PF2(Xorshift1024StarNext)( state );
-    
-    return PF2(toFloat)( x );
-}
-
-
 // NOTE(jonas): the jump is equivalent to 2^512 calls to next
 PRNG_JUMP_FUNC(PF2(Xorshift1024StarJump))
 {
@@ -335,7 +316,6 @@ PRNG PF(InitXorshift1024Star)( XORSHIFT *state, u64 seed )
     
     PRNG g;
     g.next      = PF2(Xorshift1024StarNext);
-    g.nextFloat = PF2(Xorshift1024StarNextFloat);
     g.jump      = PF2(Xorshift1024StarJump);
     g.seed      = PF2(Xorshift1024StarSeed);
     g.state     = state;
@@ -350,12 +330,10 @@ void test_xorshift1024_star()
     PF2(Xorshift1024StarSeed)( &x, 37473 );
     
     TEST_ASSERT( PF2(Xorshift1024StarNext)( &x ) > 0 );
-    TEST_ASSERT( PF2(Xorshift1024StarNextFloat)( &x ) < 1.0 );
     
     PF2(Xorshift1024StarJump)( &x);
     
     TEST_ASSERT( PF2(Xorshift1024StarNext)( &x ) > 0 );
-    TEST_ASSERT( PF2(Xorshift1024StarNextFloat)( &x ) < 1.0 );
 }
 #endif
 
@@ -393,14 +371,6 @@ PRNG_NEXT_FUNC(PF2(Xorshiro256StarStarNext))
     x->s[3]  = PF2(rotl)(x->s[3], 45);
     
     return res;
-}
-
-
-PRNG_NEXT_FLOAT_FUNC(PF2(Xorshiro256StarStarNextFloat))
-{
-    u64 x = PF2(Xorshiro256StarStarNext)( state );
-    
-    return PF2(toFloat)( x );
 }
 
 
@@ -455,7 +425,6 @@ PRNG PF(InitXorshiro256StarStar)( XORSHIRO *state, u64 seed )
     
     PRNG g;
     g.next      = PF2(Xorshiro256StarStarNext);
-    g.nextFloat = PF2(Xorshiro256StarStarNextFloat);
     g.jump      = PF2(Xorshiro256StarStarJump);
     g.seed      = PF2(Xorshiro256StarStarSeed);
     g.state     = state;
@@ -470,12 +439,10 @@ void test_xorshiro256_star_star()
     PF2(Xorshiro256StarStarSeed)( &x, 37473 );
     
     TEST_ASSERT( PF2(Xorshiro256StarStarNext)( &x ) > 0 );
-    TEST_ASSERT( PF2(Xorshiro256StarStarNextFloat)( &x ) < 1.0 );
     
     PF2(Xorshiro256StarStarJump)( &x);
     
     TEST_ASSERT( PF2(Xorshiro256StarStarNext)( &x ) > 0 );
-    TEST_ASSERT( PF2(Xorshiro256StarStarNextFloat)( &x ) < 1.0 );
 }
 #endif
     
@@ -492,9 +459,7 @@ void test_generator()
     
     STATE state;
     RNG rng = PRNG_InitXorshiro256StarStar( &state, seed );
-    
-    TEST_ASSERT( PRNG_NextFloat( rng ) < 1.0 );
-    
+
     PRNG_Jump( rng );
     
     TEST_ASSERT( PRNG_Next( rng ) > 0 );
@@ -503,7 +468,33 @@ void test_generator()
 #undef RNG
 }
 #endif
+
+
+// Uniform U[0,1] random number
+
+f64 PF(Uniform)( PRNG g )
+{
+    return PF2(toFloat)( PF(Next)( g ) );
+}
+
+
+#if TEST
+void test_uniform()
+{
+#define STATE struct PRNG_Xorshiro256StarStar
+#define RNG struct PRNG_Generator
     
+    u64 seed = PRNG_SeedValue();
+    
+    STATE state;
+    RNG rng = PRNG_InitXorshiro256StarStar( &state, seed );
+    
+    TEST_ASSERT( PRNG_Uniform( rng ) < 1.0 );
+    
+#undef STATE
+#undef RNG
+}
+#endif
 
 // Standard Normal Random Number with Box-Muller Transformation.
 // https://en.wikipedia.org/wiki/Box–Muller_transform .*/
@@ -511,8 +502,8 @@ void test_generator()
 
 f64 PF(BoxMuller)( PRNG g )
 {
-    f64 u = PF(NextFloat)( g );
-    f64 v = PF(NextFloat)( g );
+    f64 u = PF(Uniform)( g );
+    f64 v = PF(Uniform)( g );
     
     f64 s = sqrt( -2.0 * log( u ) );
     f64 t = cos( 2.0 * M_PI * v );

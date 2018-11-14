@@ -11,7 +11,7 @@ int main( int argn, char *argv[] ) {
     prng::Xorshift1024Star state;
     PRNG rng = prng::InitXorshift1024Star( &state, seed );
     
-    printf("A random U[0, 1] value: %.6f\n", prng::NextFloat( rng ));
+    printf("A random U[0, 1] value: %.6f\n", prng::Uniform( rng ));
     
     prng::Jump( rng );
     
