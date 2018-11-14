@@ -1,6 +1,6 @@
 CC = clang
 
-debug:   CFLAGS = -g -O0 -DDEBUG
+debug:   CFLAGS = -g -O0 -DDEBUG -std=c89
 release: CFLAGS = -O3 -march=native
 
 LFLAGS =  
@@ -11,13 +11,13 @@ TEST_TARGET = $(TARGET)_tests
 TEST_MAIN = $(TARGET)_tests.c
 TEST_LOG = $(TARGET)_tests.log
 
-all: debug
+#all: debug
 
-debug:   clean $(TARGET)
-release: clean $(TARGET)
+#debug:   clean $(TARGET)
+#release: clean $(TARGET)
 
-$(TARGET):
-	$(CC) src/main.c -o $(TARGET) $(CFLAGS) $(LFLAGS) $(DISABLED_WARNINGS)
+#$(TARGET):
+#	$(CC) src/main.c -o $(TARGET) $(CFLAGS) $(LFLAGS) $(DISABLED_WARNINGS)
 
 
 tests:
@@ -27,8 +27,8 @@ tests:
 	@./$(TEST_TARGET) 2> $(TEST_LOG)
 	@rm -f $(TEST_TARGET) $(TEST_MAIN)
 
-clean:
-	rm -f $(TARGET)
+#clean:
+#	rm -f $(TARGET)
 
 .PHONY: all clean debug release tests
 
