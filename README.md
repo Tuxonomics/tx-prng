@@ -5,8 +5,17 @@ with C (C89 and up) and C++ (C++98 and up). This library is header-only.
 Its primary intention is serve statistical simulations. Therefore, this library
 includes specific distributions which a random sample can be drawn from.
 
+## Table of Contents
+- [Namespacing](#namespacing)
+- [The Pseudo Random Number Generator (PRNG) Interface](#prng)
+- [List of PRNGs](#list-prngs)
+- [List of Univariate Distributions](#univariate)
+- [List of Multivariate Distributions](#multivariate)
+- [Examples](#examples)
+- [Changelog](#changelog)
+ 
 
-## Namespacing
+## [Namespacing](#namespacing)
 This library is namespaced for both C and C++. 
 
 In C all functions and complex
@@ -20,7 +29,7 @@ they are used internally.
 In the following only the C namespace is used.
 
 
-## The Pseudo Random Number Generator (PRNG) Interface
+## [The Pseudo Random Number Generator (PRNG) Interface](#prng)
 Every PRNG implemented will offer four basic functions:
 * Advancing to the next state: `PRNG_Next`.
 * Advancing to the next state and converting it to a 64bit float number on the
@@ -30,7 +39,7 @@ times: `PRNG_Jump`.
 * Setting the seed: `PRNG_Seed`.
 
 
-## List of PRNGs
+## [List of PRNGs](#list-prngs)
 All PRNGs used here will work on an output of unsigned 64bit integers. The
 state of the PRNGs will be at least 64bit large.
 
@@ -44,15 +53,17 @@ given as `struct PRNG_Xorshiro256StarStar`.
 is only used for seeding. It is given as `struct prng_sm64`.
 
 
-## List of Univariate Distributions
+## [List of Univariate Distributions](#univariate)
 
 * Normal distribution with mean 0 and standard deviation 1: `PRNG_BoxMuller`.
 
 
-## List of Multivariate Distributions
+## [List of Multivariate Distributions](#multivariate)
 ... to be done ...
 
 
-## Examples
+## [Examples](#examples)
 C as well as C++ examples can be found in the `examples` directory.
 
+## [Changelog](#changelog)
+- Version 0.1: First version.
