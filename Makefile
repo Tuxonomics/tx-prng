@@ -3,7 +3,7 @@ CC = clang
 debug:   CFLAGS = -g -O0 -DDEBUG -std=c89
 release: CFLAGS = -O3 -march=native
 
-LFLAGS =  
+LFLAGS = -lm 
 DISABLED_WARNINGS = -Wno-writable-strings -Wno-switch
 
 TARGET = main
