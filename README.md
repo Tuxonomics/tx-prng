@@ -1,4 +1,6 @@
 # prng-c
+[![Build Status](https://travis-ci.org/Tuxonomics/prng-c.svg?branch=master)](https://travis-ci.org/Tuxonomics/prng-c)
+
 PRNG-C provides an interface for pseudo random number generators compatible 
 with C (C89 and up) and C++ (C++98 and up). This library is header-only.
 
