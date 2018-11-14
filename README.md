@@ -37,6 +37,9 @@ state of the PRNGs will be at least 64bit large.
 * `xorshift1024*` ([here](http://vigna.di.unimi.it/ftp/papers/xorshift.pdf)) is 
 given as `struct PRNG_Xorshift1024Star`.
 
+* `xorshiro256**` ([here](http://xoshiro.di.unimi.it/xoshiro256starstar.c)) is
+given as `struct PRNG_Xorshiro256StarStar`.
+
 * `splitmix64` ([here](https://github.com/svaarala/duktape/blob/master/misc/splitmix64.c))
 is only used for seeding. It is given as `struct prng_sm64`.
 

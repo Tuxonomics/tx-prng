@@ -30,7 +30,8 @@ extern "C" {
     typedef i32      b32;
 #endif
     
-    
+
+#if 1 // if defined elsewhere
 #if defined(_MSC_VER)
     #if _MSC_VER < 1300
         #define DEBUG_TRAP() __asm int 3
@@ -116,6 +117,7 @@ void assertHandler(char const *file, i32 line, char const *msg, ...) {
     }
     va_end(args);
 }
+#endif
 
 
 #ifdef __cplusplus
@@ -139,6 +141,12 @@ namespace prng {
 b32 PF2(f64Equal)( f64 a, f64 b, f64 eps )
 {
     return fabs( a - b ) < eps;
+}
+
+
+Inline
+u64 PF2(rotl)(const u64 x, i32 k) {
+    return (x << k) | (x >> (64 - k));
 }
 
 
@@ -321,7 +329,7 @@ PRNG_SEED_FUNC(PF2(Xorshift1024StarSeed))
 }
 
     
-PRNG PF(InitXorshift1024Star)( struct PF(Xorshift1024Star) *state, u64 seed )
+PRNG PF(InitXorshift1024Star)( XORSHIFT *state, u64 seed )
 {
     PF2(Xorshift1024StarSeed)( state, seed );
     
@@ -335,11 +343,8 @@ PRNG PF(InitXorshift1024Star)( struct PF(Xorshift1024Star) *state, u64 seed )
 }
 
 
-#define PRNG_XORSHIFT_INIT PF(Xorshift1024StarInit)( PF(SeedValue)() )
-
-
 #if TEST
-void test_xorshift1024()
+void test_xorshift1024_star()
 {
     XORSHIFT x;
     PF2(Xorshift1024StarSeed)( &x, 37473 );
@@ -357,14 +362,145 @@ void test_xorshift1024()
 #undef XORSHIFT
 
     
-// TODO(jonas): http://xoshiro.di.unimi.it/xoshiro256starstar.c
+// xorshiro256** http://xoshiro.di.unimi.it/xoshiro256starstar.c
 
+#ifdef __cplusplus
+typedef struct PF(Xorshiro256StarStar) Xorshiro256StarStar;
+#endif
+
+struct PF(Xorshiro256StarStar) {
+    u64 s[4];
+};
+
+#define XORSHIRO struct PF(Xorshiro256StarStar)
+
+
+PRNG_NEXT_FUNC(PF2(Xorshiro256StarStarNext))
+{
+    XORSHIRO *x = (XORSHIRO *) state;
+    
+    const u64 res = PF2(rotl)(x->s[1] * 5, 7) * 9;
+    
+    const u64 t = x->s[1] << 17;
+    
+    x->s[2] ^= x->s[0];
+    x->s[3] ^= x->s[1];
+    x->s[1] ^= x->s[2];
+    x->s[0] ^= x->s[3];
+    
+    x->s[2] ^= t;
+    
+    x->s[3]  = PF2(rotl)(x->s[3], 45);
+    
+    return res;
+}
+
+
+PRNG_NEXT_FLOAT_FUNC(PF2(Xorshiro256StarStarNextFloat))
+{
+    u64 x = PF2(Xorshiro256StarStarNext)( state );
+    
+    return PF2(toFloat)( x );
+}
+
+
+// NOTE(jonas): the jump is equivalent to 2^128 calls to next
+PRNG_JUMP_FUNC(PF2(Xorshiro256StarStarJump))
+{
+    XORSHIRO *x = (XORSHIRO *) state;
+    
+    static const u64 JUMP[] = {
+        0x180ec6d33cfd0aba, 0xd5a61266f0c9392c,
+        0xa9582618e03fc9aa, 0x39abdc4529b1661c
+    };
+    
+    u64 s0 = 0;
+    u64 s1 = 0;
+    u64 s2 = 0;
+    u64 s3 = 0;
+    for ( i32 i = 0; i < sizeof( JUMP ) / sizeof( *JUMP ); ++i ) {
+        for ( i32 b = 0; b < 64; ++b ) {
+            if ( JUMP[i] & UINT64_C(1) << b ) {
+                s0 ^= x->s[0];
+                s1 ^= x->s[1];
+                s2 ^= x->s[2];
+                s3 ^= x->s[3];
+            }
+            PF2(Xorshiro256StarStarNext)( state );
+        }
+    }
+    
+    x->s[0] = s0;
+    x->s[1] = s1;
+    x->s[2] = s2;
+    x->s[3] = s3;
+}
+
+
+PRNG_SEED_FUNC(PF2(Xorshiro256StarStarSeed))
+{
+    XORSHIRO *x = (XORSHIRO *) state;
+    
+    SMIX sp = (SMIX) { .s = seed };
+    
+    for ( u32 i=0; i<4; ++i ) {
+        x->s[i] = PF2(sm64Next)( &sp );
+    }
+}
+
+
+PRNG PF(InitXorshiro256StarStar)( XORSHIRO *state, u64 seed )
+{
+    PF2(Xorshiro256StarStarSeed)( state, seed );
+    
+    PRNG g;
+    g.next      = PF2(Xorshiro256StarStarNext);
+    g.nextFloat = PF2(Xorshiro256StarStarNextFloat);
+    g.jump      = PF2(Xorshiro256StarStarJump);
+    g.seed      = PF2(Xorshiro256StarStarSeed);
+    g.state     = state;
+    return g;
+}
+    
+    
+#if TEST
+void test_xorshiro256_star_star()
+{
+    XORSHIRO x;
+    PF2(Xorshiro256StarStarSeed)( &x, 37473 );
+    
+    TEST_ASSERT( PF2(Xorshiro256StarStarNext)( &x ) > 0 );
+    TEST_ASSERT( PF2(Xorshiro256StarStarNextFloat)( &x ) < 1.0 );
+    
+    PF2(Xorshiro256StarStarJump)( &x);
+    
+    TEST_ASSERT( PF2(Xorshiro256StarStarNext)( &x ) > 0 );
+    TEST_ASSERT( PF2(Xorshiro256StarStarNextFloat)( &x ) < 1.0 );
+}
+#endif
+    
+#undef XORSHIRO
 
 
 #if TEST
 void test_generator()
 {
+#define STATE struct PRNG_Xorshiro256StarStar
+#define RNG struct PRNG_Generator
+
+    u64 seed = PRNG_SeedValue();
     
+    STATE state;
+    RNG rng = PRNG_InitXorshiro256StarStar( &state, seed );
+    
+    TEST_ASSERT( PRNG_NextFloat( rng ) < 1.0 );
+    
+    PRNG_Jump( rng );
+    
+    TEST_ASSERT( PRNG_Next( rng ) > 0 );
+    
+#undef STATE
+#undef RNG
 }
 #endif
     
