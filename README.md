@@ -33,7 +33,8 @@ In the following only the C namespace is used.
 
 ## [The Pseudo Random Number Generator (PRNG) Interface](#prng)
 Every PRNG implemented will offer four basic functions:
-* Advancing to the next state: `PRNG_Next`.
+* Advancing to the next state and returning a 64bit unsigned integer:
+`PRNG_Next`.
 * Jumping ahead which is equivalent to calling `PRNG_Next` a certain number of
 times: `PRNG_Jump`.
 * Setting the seed: `PRNG_Seed`.
@@ -53,6 +54,7 @@ is only used for seeding. It is given as `struct prng_sm64`.
 ## [List of Univariate Distributions](#univariate)
 * Uniform U[0,1] distribution: `PRNG_Uniform`.
 * Normal distribution with mean 0 and standard deviation 1: `PRNG_BoxMuller`.
+* Exponential distribution: `PRNG_Exponential`.
 
 
 ## [List of Multivariate Distributions](#multivariate)

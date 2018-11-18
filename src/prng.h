@@ -471,7 +471,7 @@ void test_generator()
 
 
 // Uniform U[0,1] random number
-
+Inline
 f64 PF(Uniform)( PRNG g )
 {
     return PF2(toFloat)( PF(Next)( g ) );
@@ -483,22 +483,20 @@ void test_uniform()
 {
 #define STATE struct PRNG_Xorshiro256StarStar
 #define RNG struct PRNG_Generator
-    
-    u64 seed = PRNG_SeedValue();
-    
+
     STATE state;
-    RNG rng = PRNG_InitXorshiro256StarStar( &state, seed );
+    RNG rng = PF(InitXorshiro256StarStar)( &state, 3747 );
     
-    TEST_ASSERT( PRNG_Uniform( rng ) < 1.0 );
+    TEST_ASSERT( PRNG_Uniform( rng ) <= 1.0 );
     
 #undef STATE
 #undef RNG
 }
 #endif
 
+
 // Standard Normal Random Number with Box-Muller Transformation.
 // https://en.wikipedia.org/wiki/Box–Muller_transform .*/
-
 
 f64 PF(BoxMuller)( PRNG g )
 {
@@ -531,6 +529,45 @@ void test_box_muller()
     TEST_ASSERT( PF2(f64Equal)( mean, 0, 0.1 ) );
 }
 #endif
+
+
+f64 PF(Exponential)( PRNG g, f64 lambda )
+{
+    ASSERT( lambda > 0 );
+    
+    f64 u = PF(Uniform)( g );
+    
+    return - log( u ) / lambda;
+}
+
+
+#if TEST
+void test_exponential()
+{
+#define STATE struct PRNG_Xorshiro256StarStar
+#define RNG struct PRNG_Generator
+
+    u32 N = 1000;
+    
+    STATE state;
+    RNG rng = PF(InitXorshiro256StarStar)( &state, 3547 );
+    
+    f64 lambda = 3.5;
+    f64 mean = 0;
+    
+    for ( u32 i=0; i<N; ++i ) {
+        mean += PF(Exponential)( rng, lambda );
+    }
+    
+    mean = mean / N;
+
+    TEST_ASSERT( PF2(f64Equal)( mean, 1.0/lambda, 0.02 ) );
+
+#undef STATE
+#undef RNG
+}
+#endif
+
 
 
 #undef PF
