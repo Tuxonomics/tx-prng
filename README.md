@@ -33,7 +33,7 @@ In the following only the C namespace is used.
 
 ## [The Pseudo Random Number Generator (PRNG) Interface](#prng)
 Every PRNG implemented will offer four basic functions:
-* Advancing to the next state and returning a 64bit unsigned integer:
+* Advancing to the next state and returning a 64 bit unsigned integer:
 `PRNG_Next`.
 * Jumping ahead which is equivalent to calling `PRNG_Next` a certain number of
 times: `PRNG_Jump`.
@@ -41,13 +41,13 @@ times: `PRNG_Jump`.
 
 
 ## [List of PRNGs](#list-prngs)
-All PRNGs used here will work on an output of unsigned 64bit integers. The
-state of the PRNGs will be at least 64bit large.
+All PRNGs used here will work on an output of unsigned 64 bit integers. The
+state of the PRNGs will be at least 64 bit large.
 * `xorshift1024*` ([from](http://vigna.di.unimi.it/ftp/papers/xorshift.pdf)) is 
-given as `struct PRNG_Xorshift1024Star`. A state of 1024bit for massively
+given as `struct PRNG_Xorshift1024Star`. A state of 1024 bit for massively
 parallel applications.
 * `xoshiro256**` ([from](http://xoshiro.di.unimi.it/xoshiro256starstar.c)) is
-given as `struct PRNG_Xorshiro256StarStar`. A state of 256bit for moderately
+given as `struct PRNG_Xorshiro256StarStar`. A state of 256 bit for moderately
 parallel applications.
 * `splitmix64` ([from](https://dl.acm.org/citation.cfm?doid=2714064.2660195))
 is only used for seeding. It is given as `struct prng_sm64`.

@@ -137,7 +137,49 @@ namespace prng {
     #define PF2(name) name
 #endif
 
-    
+
+#define ARRAY_SELECTION( selection, sign ) \
+    f64 PF2(Array##selection)( f64 *array, u64 length ) \
+    { \
+        f64 tmp; \
+        f64 output = array[0]; \
+        for ( u64 i=1; i<length; ++i ) { \
+            if ( array[i] sign output ) { \
+                output = array[i]; \
+            } \
+        } \
+        return output; \
+    }
+
+
+ARRAY_SELECTION(Max, > );
+ARRAY_SELECTION(Min, > );
+
+#undef ARRAY_SELECTION
+
+
+f64 PF2(ArrayMean)( f64 *array, u64 length )
+{
+    f64 sum = 0.0;
+    for ( u64 i=1; i<length; ++i ) {
+        sum += array[i];
+    }
+    return sum / (f64) length;
+}
+
+
+f64 PF2(ArrayVariance)( f64 *array, u64 length )
+{
+    f64 mean = PF2(ArrayMean)( array, length );
+    f64 tmp, sum  = 0.0;
+    for ( u64 i=1; i<length; ++i ) {
+        tmp = ( array[i] - mean );
+        sum += tmp * tmp;
+    }
+    return sum / (f64) (length - 1);
+}
+
+
 b32 PF2(f64Equal)( f64 a, f64 b, f64 eps )
 {
     return fabs( a - b ) < eps;
@@ -513,20 +555,23 @@ f64 PF(BoxMuller)( PRNG g )
 #if TEST
 void test_box_muller()
 {
-    u32 N = 100;
+#define N 1000
+    
+    f64 array[N];
     
     struct PF(Xorshift1024Star) state;
     PRNG rng = PF(InitXorshift1024Star)( &state, 3747 );
     
-    f64 mean = 0;
-    
     for ( u32 i=0; i<N; ++i ) {
-        mean += PF(BoxMuller)( rng );
+        array[i] = PF(BoxMuller)( rng );
     }
     
-    mean = mean / N;
+    f64 mean = PF2(ArrayMean)( array, N );
+    f64 var  = PF2(ArrayVariance)( array, N );
     
-    TEST_ASSERT( PF2(f64Equal)( mean, 0, 0.1 ) );
+    TEST_ASSERT( PF2(f64Equal)( mean, 0,   0.01 ) );
+    TEST_ASSERT( PF2(f64Equal)( var,  1.0, 0.1 ) );
+#undef N
 }
 #endif
 
@@ -548,24 +593,28 @@ void test_exponential()
 #define STATE struct PRNG_Xoshiro256StarStar
 #define RNG struct PRNG_Generator
 
-    u32 N = 1000;
+#define N 1000
+    
+    f64 array[N];
     
     STATE state;
     RNG rng = PF(InitXoshiro256StarStar)( &state, 3547 );
     
     f64 lambda = 3.5;
-    f64 mean = 0;
     
     for ( u32 i=0; i<N; ++i ) {
-        mean += PF(Exponential)( rng, lambda );
+        array[i] = PF(Exponential)( rng, lambda );
     }
     
-    mean = mean / N;
+    f64 mean = PF2(ArrayMean)( array, N );
+    f64 var  = PF2(ArrayVariance)( array, N );
 
-    TEST_ASSERT( PF2(f64Equal)( mean, 1.0/lambda, 0.02 ) );
+    TEST_ASSERT( PF2(f64Equal)( mean, 1.0/lambda,            0.01 ) );
+    TEST_ASSERT( PF2(f64Equal)( var,  1.0/(lambda * lambda), 0.01 ) );
 
 #undef STATE
 #undef RNG
+#undef N
 }
 #endif
 
