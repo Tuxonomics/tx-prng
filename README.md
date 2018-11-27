@@ -43,21 +43,32 @@ times: `PRNG_Jump`.
 ## [List of PRNGs](#list-prngs)
 All PRNGs used here will work on an output of unsigned 64 bit integers. The
 state of the PRNGs will be at least 64 bit large.
+
 * `xorshift1024*` ([from](http://vigna.di.unimi.it/ftp/papers/xorshift.pdf)) is 
 given as `struct PRNG_Xorshift1024Star`. A state of 1024 bit for massively
 parallel applications.
+
 * `xoshiro256**` ([from](http://xoshiro.di.unimi.it/xoshiro256starstar.c)) is
 given as `struct PRNG_Xorshiro256StarStar`. A state of 256 bit for moderately
 parallel applications.
+
 * `splitmix64` ([from](https://dl.acm.org/citation.cfm?doid=2714064.2660195))
 is only used for seeding. It is given as `struct prng_sm64`.
 
 
 ## [List of Univariate Distributions](#univariate)
 * Uniform U[0,1] distribution: `PRNG_Uniform`.
-* Normal distribution with mean 0 and standard deviation 1: `PRNG_BoxMuller`.
+
+* Normal distribution, based on the Box-Muller transformation, with mean 0 and
+standard deviation 1: `PRNG_Normal`.
+
 * Exponential distribution: `PRNG_Exponential`.
 
+* Gamma distribution, based on Marsaglia and Tsang: `PRNG_Gamma`.
+
+* Accept-reject method for any univariate distribution: 
+`PRNG_AcceptRejectSingle` for a single value, `PRNG_AcceptReject` for an array
+of random values.
 
 ## [List of Multivariate Distributions](#multivariate)
 ... to be done ...

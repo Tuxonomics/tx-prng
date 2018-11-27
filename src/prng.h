@@ -520,6 +520,17 @@ f64 PF(Uniform)( PRNG g )
 }
 
 
+Inline
+f64 PF(UniformPositive)( PRNG g )
+{
+    f64 res;
+    do {
+        res = PF(Uniform)( g );
+    } while( res == 0 );
+    return res;
+}
+
+
 #if TEST
 void test_uniform()
 {
@@ -540,7 +551,7 @@ void test_uniform()
 // Standard Normal Random Number with Box-Muller Transformation.
 // https://en.wikipedia.org/wiki/Box–Muller_transform .*/
 
-f64 PF(BoxMuller)( PRNG g )
+f64 PF(Normal)( PRNG g )
 {
     f64 u = PF(Uniform)( g );
     f64 v = PF(Uniform)( g );
@@ -553,7 +564,7 @@ f64 PF(BoxMuller)( PRNG g )
 
 
 #if TEST
-void test_box_muller()
+void test_normal()
 {
 #define N 1000
     
@@ -563,7 +574,7 @@ void test_box_muller()
     PRNG rng = PF(InitXorshift1024Star)( &state, 3747 );
     
     for ( u32 i=0; i<N; ++i ) {
-        array[i] = PF(BoxMuller)( rng );
+        array[i] = PF(Normal)( rng );
     }
     
     f64 mean = PF2(ArrayMean)( array, N );
@@ -580,9 +591,8 @@ f64 PF(Exponential)( PRNG g, f64 lambda )
 {
     ASSERT( lambda > 0 );
     
-    f64 u = PF(Uniform)( g );
+    f64 u = PF(UniformPositive)( g );
 
-    // NOTE(jonas): maybe (u == 0.0) : 0.0 ? - log( u ) / lambda
     return - log( u ) / lambda;
 }
 
@@ -618,6 +628,146 @@ void test_exponential()
 }
 #endif
 
+
+typedef f64 PF2(arPDF)( f64 x );
+typedef f64 PF2(arProposal)( PRNG g );
+
+
+Inline
+b32 PF2(arRatio)
+(
+    PRNG            g,
+    PF2(arProposal) *proposal,
+    PF2(arPDF)      *targetPDF,
+    PF2(arPDF)      *proposalPDF,
+    f64             c,
+    f64             *targetValue )
+{
+#define x *targetValue
+    f64 u = PF(Uniform)( g );
+    x     = proposal( g );
+
+    f64 ratio = targetPDF( x ) / ( c * proposalPDF( x ) );
+
+    return( u < ratio );
+#undef x
+}
+
+
+f64 PF(AcceptRejectSingle)(
+    PRNG            g,
+    PF2(arProposal) *proposal,
+    PF2(arPDF)      *targetPDF,
+    PF2(arPDF)      *proposalPDF,
+    f64             c )
+{
+    b32 accept;
+    f64 x;
+    for ( u32 i=0; i<1E3; ++i ) {
+        accept = PF2(arRatio)( g, proposal, targetPDF, proposalPDF, c, &x );
+        if ( accept ) {
+            return x;
+        }
+    }
+    return NAN;
+}
+
+
+void PF(AcceptReject)(
+    PRNG            g,
+    PF2(arProposal) *proposal,
+    PF2(arPDF)      *targetPDF,
+    PF2(arPDF)      *proposalPDF,
+    f64             c,
+    f64             *targetVals,
+    u64             targetSize )
+{
+    b32 accept;
+    f64 x;
+    u64 i = 0;
+    while ( i<targetSize ) {
+        accept = PF2(arRatio)( g, proposal, targetPDF, proposalPDF, c, &x );
+        if ( accept ) {
+            targetVals[i] = x;
+            i += 1;
+        }
+    }
+}
+
+
+#if TEST
+void test_accept_reject()
+{
+}
+#endif
+
+
+/*
+Marsaglia and Tsang (2000) "A Simple Method for
+generating gamma variables". https://dl.acm.org/citation.cfm?id=358414
+
+Can be made faster with Ziggurat as in GSL.
+*/
+
+f64 PF(Gamma)( PRNG g, f64 k, f64 theta )
+{
+    f64 d, c, x, v, u;
+    d = k - (1.0/3.0);
+    c = 1.0 / (3.0 * sqrt(d));
+
+    while( 1 ) {
+        do {
+            x = PF(Normal)( g );
+            v = 1.0 + c * x;
+        } while ( v <= 0.0 );
+
+        v = v * v * v;
+        u = PF(UniformPositive)( g );
+
+        if ( u < 1.0 - (0.0331 * x * x * x * x) ) {
+            break;
+        }
+        if ( log(u) < 0.5 * x * x + d * (1.0 - v + log(v)) ) {
+            break;
+        }
+    }
+    return theta * d * v;
+}
+
+
+#if TEST
+void test_gamma()
+{
+#define STATE struct PRNG_Xoshiro256StarStar
+#define RNG struct PRNG_Generator
+
+#define N 1000
+    
+    f64 array[N];
+    
+    STATE state;
+    RNG rng = PF(InitXoshiro256StarStar)( &state, 37 );
+    
+    f64 k     = 1.0;
+    f64 theta = 3.0;
+    
+    for ( u32 i=0; i<N; ++i ) {
+        array[i] = PF(Gamma)( rng, k, theta );
+    }
+    
+    f64 mean = PF2(ArrayMean)( array, N );
+    f64 var  = PF2(ArrayVariance)( array, N );
+
+    TEST_ASSERT( PF2(f64Equal)( mean, k*theta,           0.1 ) );
+    TEST_ASSERT( PF2(f64Equal)( var,  k*(theta * theta), 0.2 ) );
+
+#undef STATE
+#undef RNG
+#undef N
+
+
+}
+#endif
 
 
 #undef PF
