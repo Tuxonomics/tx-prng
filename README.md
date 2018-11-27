@@ -59,6 +59,8 @@ is only used for seeding. It is given as `struct prng_sm64`.
 ## [List of Univariate Distributions](#univariate)
 * Uniform U[0,1] distribution: `PRNG_Uniform`.
 
+* Uniform U(0,1] distribution: `PRNG_UniformPositive`.
+
 * Normal distribution, based on the Box-Muller transformation, with mean 0 and
 standard deviation 1: `PRNG_Normal`.
 
