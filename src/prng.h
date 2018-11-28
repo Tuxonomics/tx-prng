@@ -10,26 +10,26 @@ extern "C" {
 #include <stdarg.h>
 #include <time.h>
 #include <math.h>
-    
-    
+
+
 #if 1 // if defined elsewhere
     typedef uint8_t  u8;
     typedef uint16_t u16;
     typedef uint32_t u32;
     typedef uint64_t u64;
-    
+
     typedef int8_t   i8;
     typedef int16_t  i16;
     typedef int32_t  i32;
     typedef int64_t  i64;
-    
+
     typedef float    f32;
     typedef double   f64;
-    
+
     typedef i8       b8;
     typedef i32      b32;
 #endif
-    
+
 
 #if 1 // if defined elsewhere
 #if defined(_MSC_VER)
@@ -541,7 +541,7 @@ void test_uniform()
     RNG rng = PF(InitXoshiro256StarStar)( &state, 3747 );
     
     TEST_ASSERT( PRNG_Uniform( rng ) <= 1.0 );
-    
+
 #undef STATE
 #undef RNG
 }
@@ -567,7 +567,7 @@ f64 PF(Normal)( PRNG g )
 void test_normal()
 {
 #define N 1000
-    
+
     f64 array[N];
     
     struct PF(Xorshift1024Star) state;
@@ -604,7 +604,7 @@ void test_exponential()
 #define RNG struct PRNG_Generator
 
 #define N 1000
-    
+
     f64 array[N];
     
     STATE state;
@@ -742,7 +742,7 @@ void test_gamma()
 #define RNG struct PRNG_Generator
 
 #define N 1000
-    
+
     f64 array[N];
     
     STATE state;
@@ -764,7 +764,134 @@ void test_gamma()
 #undef STATE
 #undef RNG
 #undef N
+}
+#endif
 
+
+u32 PF(Bernoulli)( PRNG g, f64 p )
+{
+    if ( PF(Uniform)( g ) < p ) {
+        return 1;
+    } else {
+        return 0;
+    }
+}
+
+
+#if TEST
+void test_bernoulli()
+{
+#define STATE struct PRNG_Xoshiro256StarStar
+#define RNG struct PRNG_Generator
+
+#define N 1000
+
+    f64 array[N];
+
+    STATE state;
+    RNG rng = PF(InitXoshiro256StarStar)( &state, 37 );
+
+    f64 p = 0.75;
+
+    for ( u32 i=0; i<N; ++i ) {
+        array[i] = (f64) PF(Bernoulli)( rng, p );
+    }
+
+    f64 mean = PF2(ArrayMean)( array, N );
+
+    TEST_ASSERT( PF2(f64Equal)( mean, p, 0.01 ) );
+
+#undef STATE
+#undef RNG
+#undef N
+
+}
+#endif
+
+
+/*
+https://en.wikipedia.org/wiki/Beta_distribution
+*/
+
+f64 PF(Beta)( PRNG g, f64 a, f64 b )
+{
+    if ( a <= 1.0 && b <= 1.0 ) {
+        f64 u, v, x, y;
+        for (;;) {
+            u = PF(UniformPositive)( g );
+            v = PF(UniformPositive)( g );
+
+            x = pow( u, 1./a );
+            y = pow( v, 1./b );
+
+            if ( ( x + y ) <= 1.0 ) {
+                if ( ( x + y ) > 0 ) {
+                    return ( x / (x + y) );
+                }
+                else {
+                    f64 lx = log( u ) / a;
+                    f64 ly = log( v ) / b;
+                    f64 lm = ( lx > ly ) ? lx : ly;
+
+                    lx = lx - lm;
+                    ly = ly - lm;
+
+                    return exp( lx - log(exp(lx) + exp(ly)) );
+                }
+            }
+        }
+    }
+    else {
+        f64 x = PF(Gamma)( g, a, 1.0 );
+        f64 y = PF(Gamma)( g, b, 1.0 );
+        return ( x / (x + y) );
+    }
+}
+
+
+#if TEST
+void test_beta()
+{
+#define STATE struct PRNG_Xoshiro256StarStar
+#define RNG struct PRNG_Generator
+
+#define N 1000
+
+    f64 array[N];
+
+    STATE state;
+    RNG rng = PF(InitXoshiro256StarStar)( &state, 371 );
+
+    f64 a = 1.0;
+    f64 b = 1./3.;
+
+    for ( u32 i=0; i<N; ++i ) {
+        array[i] = (f64) PF(Beta)( rng, a, b );
+    }
+
+    f64 mean = PF2(ArrayMean)( array, N );
+    f64 var  = PF2(ArrayVariance)( array, N );
+
+    TEST_ASSERT( PF2(f64Equal)( mean, a/(a+b), 0.01 ) );
+    TEST_ASSERT( PF2(f64Equal)( var,  a*b/((a+b)*(a+b)*(a+b+1.0)), 0.01 ) );
+
+    a = 1.5;
+    b = 1.2;
+
+    for ( u32 i=0; i<N; ++i ) {
+        array[i] = (f64) PF(Beta)( rng, a, b );
+    }
+
+    mean = PF2(ArrayMean)( array, N );
+    var  = PF2(ArrayVariance)( array, N );
+
+    TEST_ASSERT( PF2(f64Equal)( mean, a/(a+b), 0.01 ) );
+    TEST_ASSERT( PF2(f64Equal)( var,  a*b/((a+b)*(a+b)*(a+b+1.0)), 0.001 ) );
+
+
+#undef STATE
+#undef RNG
+#undef N
 
 }
 #endif
