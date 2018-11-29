@@ -575,6 +575,15 @@ f64 PF(NormalPDF)( f64 x, f64 m, f64 s )
 }
 
 
+f64 PF(NormalLPDF)( f64 x, f64 m, f64 s )
+{
+    f64 tmp1 = 2.0 * s * s;
+    f64 tmp2 = x - m;
+
+    return -0.5 * log( M_PI * tmp1 ) - tmp2 * tmp2 / tmp1;
+}
+
+
 #if TEST
 void test_normal()
 {
@@ -595,9 +604,11 @@ void test_normal()
     TEST_ASSERT( PF2(f64Equal)( mean, 0,   0.01 ) );
     TEST_ASSERT( PF2(f64Equal)( var,  1.0, 0.1 ) );
 
-    f64 pdf = PF(NormalPDF)( 1.0, 1.0, 1.0 );
+    f64 pdf  = PF(NormalPDF)( 1.0, 1.0, 1.0 );
+    f64 lpdf = PF(NormalLPDF)( 1.0, 1.0, 1.0 );
 
-    TEST_ASSERT( PF2(f64Equal)( pdf, 0.3989423, 1E-6 ) );
+    TEST_ASSERT( PF2(f64Equal)( pdf,  0.3989423,  1E-6 ) );
+    TEST_ASSERT( PF2(f64Equal)( lpdf, log( pdf ), 1E-6 ) );
 #undef N
 }
 #endif
@@ -616,6 +627,12 @@ f64 PF(Exponential)( PRNG g, f64 lambda )
 f64 PF(ExponentialPDF)( f64 x, f64 lambda )
 {
     return lambda * exp( - lambda * x );
+}
+
+
+f64 PF(ExponentialLPDF)( f64 x, f64 lambda )
+{
+    return log( lambda ) - lambda * x;
 }
 
 
@@ -644,9 +661,11 @@ void test_exponential()
     TEST_ASSERT( PF2(f64Equal)( mean, 1.0/lambda,            0.01 ) );
     TEST_ASSERT( PF2(f64Equal)( var,  1.0/(lambda * lambda), 0.01 ) );
 
-    f64 pdf = PF(ExponentialPDF)( 0.45, lambda );
+    f64 pdf  = PF(ExponentialPDF)( 0.45, lambda );
+    f64 lpdf = PF(ExponentialLPDF)( 0.45, lambda );
 
-    TEST_ASSERT( PF2(f64Equal)( pdf, 0.7245264, 1E-6 ) );
+    TEST_ASSERT( PF2(f64Equal)( pdf,        0.7245264, 1E-6 ) );
+    TEST_ASSERT( PF2(f64Equal)( log( pdf ), lpdf,      1E-6 ) );
 
 #undef STATE
 #undef RNG
@@ -733,7 +752,7 @@ void test_accept_reject()
 Marsaglia and Tsang (2000) "A Simple Method for
 generating gamma variables". https://dl.acm.org/citation.cfm?id=358414
 
-Can be made faster with Ziggurat as in GSL.
+Can be made faster with Ziggurat.
 */
 
 f64 PF(Gamma)( PRNG g, f64 k, f64 theta )
