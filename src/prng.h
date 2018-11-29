@@ -762,6 +762,72 @@ f64 PF(Gamma)( PRNG g, f64 k, f64 theta )
 }
 
 
+/*
+http://compbio.mit.edu/spimap/pub/spimap/src/gamma.cpp
+http://www.rskey.org/CMS/index.php/the-library/11
+from "Numerical Recipes"
+*/
+
+f64 PF2(gammln)( f64 xx )
+{
+    f64 x, tmp, y, ser;
+    static const f64 cof[6] = {
+        76.18009172947146,     -86.50532032941677,
+        24.01409824083091,     -1.231739572450155,
+        0.1208650973866179e-2, -0.5395239384953e-5
+    };
+
+    x   = xx - 1.0;
+
+    tmp  = x + 5.5;
+    tmp -= ( x + 0.5 ) * log( tmp );
+
+    ser = 1.000000000190015;
+
+    for ( u32 j=0; j<=5; ++j ) {
+        x   += 1.0;
+        ser += cof[j]/x;
+    }
+    return -tmp+log(2.5066282746310005*ser);
+}
+
+
+f64 PF(GammaLPDF)( f64 x, f64 k, f64 theta )
+{
+    if ( x <= 0 || k <= 0 || theta <= 0 ) {
+        return 0.0;
+    } else {
+        return -x/theta + (k - 1.0) * log(x) - k * log(theta) - PF2(gammln)(k);
+    }
+}
+
+
+f64 PF2(gamm)( f64 x )
+{
+    double ret = (
+        1.000000000190015 +
+        76.18009172947146 / (x + 1) +
+        -86.50532032941677 / (x + 2) +
+        24.01409824083091 / (x + 3) +
+        -1.231739572450155 / (x + 4) +
+        1.208650973866179e-3 / (x + 5) +
+        -5.395239384953e-6 / (x + 6)
+    );
+
+    return ret * sqrt(2*M_PI)/x * pow(x + 5.5, x+0.5) * exp(-x-5.5);
+}
+
+
+f64 PF(GammaPDF)( f64 x, f64 k, f64 theta )
+{
+    if ( x <= 0 || k <= 0 || theta <= 0 ) {
+        return 0.0;
+    } else {
+        return exp(-x/theta) * pow(x, k - 1.0) * pow(theta, -k) / PF2(gamm)(k);
+    }
+}
+
+
 #if TEST
 void test_gamma()
 {
@@ -787,6 +853,12 @@ void test_gamma()
 
     TEST_ASSERT( PF2(f64Equal)( mean, k*theta,           0.1 ) );
     TEST_ASSERT( PF2(f64Equal)( var,  k*(theta * theta), 0.2 ) );
+
+    f64 pdf  = PF(GammaPDF)( 0.5, k, theta );
+    f64 lpdf = PF(GammaLPDF)( 0.5, k, theta );
+
+    TEST_ASSERT( PF2(f64Equal)( log(pdf), lpdf,      1E-6 ) );
+    TEST_ASSERT( PF2(f64Equal)( pdf,      0.2821606, 1E-6 ) );
 
 #undef STATE
 #undef RNG
@@ -909,7 +981,6 @@ void test_beta()
 
     TEST_ASSERT( PF2(f64Equal)( mean, a/(a+b), 0.01 ) );
     TEST_ASSERT( PF2(f64Equal)( var,  a*b/((a+b)*(a+b)*(a+b+1.0)), 0.001 ) );
-
 
 #undef STATE
 #undef RNG
