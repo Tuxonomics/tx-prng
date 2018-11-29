@@ -548,7 +548,7 @@ void test_uniform()
 #endif
 
 
-// Standard Normal Random Number with Box-Muller Transformation.
+// Standard normal random number with Box-Muller transform.
 // https://en.wikipedia.org/wiki/Box–Muller_transform .*/
 
 f64 PF(Normal)( PRNG g )
@@ -560,6 +560,18 @@ f64 PF(Normal)( PRNG g )
     f64 t = cos( 2.0 * M_PI * v );
     
     return s * t;
+}
+
+
+f64 PF(NormalPDF)( f64 x, f64 m, f64 s )
+{
+    f64 tmp1 = 2.0 * s * s;
+    f64 tmp2 = x - m;
+
+    f64 p1 = 1.0 / sqrt( M_PI * tmp1 );
+    f64 p2 = exp( - tmp2 * tmp2 / tmp1 );
+
+    return p1 * p2;
 }
 
 
@@ -582,6 +594,10 @@ void test_normal()
     
     TEST_ASSERT( PF2(f64Equal)( mean, 0,   0.01 ) );
     TEST_ASSERT( PF2(f64Equal)( var,  1.0, 0.1 ) );
+
+    f64 pdf = PF(NormalPDF)( 1.0, 1.0, 1.0 );
+
+    TEST_ASSERT( PF2(f64Equal)( pdf, 0.3989423, 1E-6 ) );
 #undef N
 }
 #endif
@@ -698,6 +714,7 @@ void PF(AcceptReject)(
 #if TEST
 void test_accept_reject()
 {
+    printf("... unimplemented ...\n");
 }
 #endif
 
