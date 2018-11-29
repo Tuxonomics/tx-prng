@@ -810,41 +810,36 @@ void test_bernoulli()
 
 
 /*
-https://en.wikipedia.org/wiki/Beta_distribution
+M. D. Joehnk (1964) "Erzeugung von betaverteilten und
+gammaverteilten Zufallsvariablen" 
+
+and
+
+Donald E. Knuth (1997) "The Art of Computer Programming:
+Seminumerical Algorithms", p. 134
 */
+
 
 f64 PF(Beta)( PRNG g, f64 a, f64 b )
 {
-    if ( a <= 1.0 && b <= 1.0 ) {
-        f64 u, v, x, y;
-        for (;;) {
-            u = PF(UniformPositive)( g );
-            v = PF(UniformPositive)( g );
-
-            x = pow( u, 1./a );
-            y = pow( v, 1./b );
-
-            if ( ( x + y ) <= 1.0 ) {
-                if ( ( x + y ) > 0 ) {
-                    return ( x / (x + y) );
-                }
-                else {
-                    f64 lx = log( u ) / a;
-                    f64 ly = log( v ) / b;
-                    f64 lm = ( lx > ly ) ? lx : ly;
-
-                    lx = lx - lm;
-                    ly = ly - lm;
-
-                    return exp( lx - log(exp(lx) + exp(ly)) );
-                }
-            }
-        }
+    if ( a > 1.0 || b > 1.0 ) {
+        f64 x1 = PF(Gamma)( g, a, 1.0 );
+        f64 x2 = PF(Gamma)( g, b, 1.0 );
+        return ( x1 / (x1 + x2) );
     }
     else {
-        f64 x = PF(Gamma)( g, a, 1.0 );
-        f64 y = PF(Gamma)( g, b, 1.0 );
-        return ( x / (x + y) );
+        f64 r1, r2, x, y;
+        while( 1 ) {
+            r1 = PF(UniformPositive)( g );
+            r2 = PF(UniformPositive)( g );
+
+            x = pow( r1, 1.0/a );
+            y = pow( r2, 1.0/b );
+
+            if ( (x + y) <= 1.0 ) {
+                return ( x / (x + y) );
+            }
+        }
     }
 }
 
