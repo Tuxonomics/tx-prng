@@ -613,6 +613,12 @@ f64 PF(Exponential)( PRNG g, f64 lambda )
 }
 
 
+f64 PF(ExponentialPDF)( f64 x, f64 lambda )
+{
+    return lambda * exp( - lambda * x );
+}
+
+
 #if TEST
 void test_exponential()
 {
@@ -637,6 +643,10 @@ void test_exponential()
 
     TEST_ASSERT( PF2(f64Equal)( mean, 1.0/lambda,            0.01 ) );
     TEST_ASSERT( PF2(f64Equal)( var,  1.0/(lambda * lambda), 0.01 ) );
+
+    f64 pdf = PF(ExponentialPDF)( 0.45, lambda );
+
+    TEST_ASSERT( PF2(f64Equal)( pdf, 0.7245264, 1E-6 ) );
 
 #undef STATE
 #undef RNG
