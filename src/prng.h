@@ -31,9 +31,9 @@ extern "C" {
 #endif
 
 
-#ifndef UTILITIES
+#ifndef TUXONOMICS_UTILITIES
 
-    #define UTILITIES
+    #define TUXONOMICS_UTILITIES
     
     #if defined(_MSC_VER)
         #if _MSC_VER < 1300
@@ -984,6 +984,9 @@ f64 PF(Beta)( PRNG g, f64 a, f64 b )
 }
 
 
+// TODO: how to deal with precision of Beta function, also when x close to 0
+// or 1?
+
 f64 PF(BetaPDF)( f64 x, f64 a, f64 b )
 {
     if ( x < 0 || x > 1.0 || a <= 0 || b <= 0 ) {
@@ -994,13 +997,13 @@ f64 PF(BetaPDF)( f64 x, f64 a, f64 b )
         f64 lgB  = PF2(gammln)( b );
         f64 lgAB = PF2(gammln)( a + b );
 
-        f64 ratio = lgAB - lgA - lgB;
+        f64 lbeta = lgAB - lgA - lgB;
 
         if ( x == 0.0 || x == 1.0 ) {
-            return exp(ratio) * pow(x, (a - 1.0)) * pow((1.0 - x), (b - 1.0));
+            return exp(lbeta) * pow(x, (a - 1.0)) * pow((1.0 - x), (b - 1.0));
         }
         else {
-            return exp( ratio + (a - 1.0) * log(x) + (b - 1.0) * log(1.0 - x) );
+            return exp( lbeta + (a - 1.0) * log(x) + (b - 1.0) * log(1.0 - x) );
 
         }
     }
@@ -1075,6 +1078,9 @@ void test_beta()
 
 }
 #endif
+
+
+
 
 
 #ifdef u8

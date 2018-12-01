@@ -5,14 +5,14 @@ PRNG-C provides an interface for pseudo random number generators compatible
 with C (C89 and up) and C++ (C++98 and up). This library is header-only.
 
 Its primary intention is serve statistical simulations. Therefore, this library
-includes specific distributions which a random sample can be drawn from.
+includes specific distributions which a random sample can be drawn from. For
+now this library will only include univariate distributions.
 
 ## Table of Contents
 - [Namespacing](#namespacing)
 - [The Pseudo Random Number Generator (PRNG) Interface](#prng)
 - [List of PRNGs](#list-prngs)
 - [List of Univariate Distributions](#univariate)
-- [List of Multivariate Distributions](#multivariate)
 - [Examples](#examples)
 - [Changelog](#changelog)
  
@@ -61,19 +61,19 @@ is only used for seeding. It is given as `struct prng_sm64`.
 
 * Uniform U(0,1] distribution: `PRNG_UniformPositive`.
 
-* Normal distribution, based on the Box-Muller transformation, with mean 0 and
-standard deviation 1: `PRNG_Normal`.
+* Normal distribution: `PRNG_Normal`.
 
 * Exponential distribution: `PRNG_Exponential`.
 
-* Gamma distribution, based on Marsaglia and Tsang: `PRNG_Gamma`.
+* Gamma distribution: `PRNG_Gamma`.
 
 * Accept-reject method for any univariate distribution: 
 `PRNG_AcceptRejectSingle` for a single value, `PRNG_AcceptReject` for an array
 of random values.
 
-## [List of Multivariate Distributions](#multivariate)
-... to be done ...
+* Bernoulli distribution: `PRNG_Bernoulli`.
+
+* Beta distribution: `PRNG_Beta`.
 
 
 ## [Examples](#examples)
