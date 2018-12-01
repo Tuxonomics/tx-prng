@@ -12,111 +12,115 @@ extern "C" {
 #include <math.h>
 
 
-#if 1 // if defined elsewhere
-    typedef uint8_t  u8;
-    typedef uint16_t u16;
-    typedef uint32_t u32;
-    typedef uint64_t u64;
+#ifndef u8
+    #define u8  uint8_t
+    #define u16 uint16_t
+    #define u32 uint32_t
+    #define u64 uint64_t
 
-    typedef int8_t   i8;
-    typedef int16_t  i16;
-    typedef int32_t  i32;
-    typedef int64_t  i64;
+    #define i8  int8_t
+    #define i16 int16_t
+    #define i32 int32_t
+    #define i64 int64_t
 
-    typedef float    f32;
-    typedef double   f64;
+    #define f32 float
+    #define f64 double
 
-    typedef i8       b8;
-    typedef i32      b32;
+    #define b8  i8
+    #define b32 i32
 #endif
 
 
-#if 1 // if defined elsewhere
-#if defined(_MSC_VER)
-    #if _MSC_VER < 1300
-        #define DEBUG_TRAP() __asm int 3
-    #else
-        #define DEBUG_TRAP() __debugbreak()
-    #endif
-#else
-    #define DEBUG_TRAP() __builtin_trap()
-#endif
+#ifndef UTILITIES
+
+    #define UTILITIES
     
-#ifndef TEST
-#if !defined(RELEASE) && !defined(ASSERTS)
-    #define ASSERT_MSG_VA(cond, msg, ...) do { \
-        if (!(cond)) { \
-        assertHandler(__FILE__, (i32)__LINE__, msg, __VA_ARGS__); \
-        DEBUG_TRAP(); \
-        } \
-        } while(0)
-
-    #define ASSERT_MSG(cond, msg) ASSERT_MSG_VA(cond, msg, 0)
-
-    #define ASSERT(cond) ASSERT_MSG_VA(cond, 0, 0)
-    #define PANIC(msg) ASSERT_MSG_VA(0, msg, 0)
-    #define UNIMPLEMENTED() ASSERT_MSG_VA(0, "unimplemented", 0);
-#else
-    #define ASSERT_MSG_VA(cond, msg, ...)
-    #define ASSERT_MSG(cond, msg)
-    #define ASSERT(cond)
-    #define PANIC(msg)
-    #define UNIMPLEMENTED()
-#endif
-#endif
-    
-    
-#if !defined(Inline)
     #if defined(_MSC_VER)
         #if _MSC_VER < 1300
-            #define Inline
+            #define DEBUG_TRAP() __asm int 3
         #else
-            #define Inline __forceinline
+            #define DEBUG_TRAP() __debugbreak()
         #endif
     #else
-        #define Inline __attribute__ ((__always_inline__))
+        #define DEBUG_TRAP() __builtin_trap()
     #endif
-#endif
+        
+    #ifndef TEST
+    #if !defined(RELEASE) && !defined(ASSERTS)
+        #define ASSERT_MSG_VA(cond, msg, ...) do { \
+            if (!(cond)) { \
+            assertHandler(__FILE__, (i32)__LINE__, msg, __VA_ARGS__); \
+            DEBUG_TRAP(); \
+            } \
+            } while(0)
     
+        #define ASSERT_MSG(cond, msg) ASSERT_MSG_VA(cond, msg, 0)
     
-#if !defined(_Threadlocal)
-    #if defined(_MSC_VER)
-        #define _Threadlocal __declspec( thread )
+        #define ASSERT(cond) ASSERT_MSG_VA(cond, 0, 0)
+        #define PANIC(msg) ASSERT_MSG_VA(0, msg, 0)
+        #define UNIMPLEMENTED() ASSERT_MSG_VA(0, "unimplemented", 0);
     #else
-        #define _Threadlocal __thread
+        #define ASSERT_MSG_VA(cond, msg, ...)
+        #define ASSERT_MSG(cond, msg)
+        #define ASSERT(cond)
+        #define PANIC(msg)
+        #define UNIMPLEMENTED()
     #endif
-#endif
-    
-    
-void Backtrace() {
-#define BACKTRACE_MAX_STACK_DEPTH 50
-#if SYSTEM_POSIX
-    void* callstack[BACKTRACE_MAX_STACK_DEPTH];
-    int i, frames = backtrace(callstack, BACKTRACE_MAX_STACK_DEPTH);
-    char** strs = backtrace_symbols(callstack, frames);
-    for (i = 0; i < frames; ++i) {
-        fprintf(stderr, "%s\n", strs[i]);
+    #endif
+        
+        
+    #if !defined(Inline)
+        #if defined(_MSC_VER)
+            #if _MSC_VER < 1300
+                #define Inline
+            #else
+                #define Inline __forceinline
+            #endif
+        #else
+            #define Inline __attribute__ ((__always_inline__))
+        #endif
+    #endif
+        
+        
+    #if !defined(_Threadlocal)
+        #if defined(_MSC_VER)
+            #define _Threadlocal __declspec( thread )
+        #else
+            #define _Threadlocal __thread
+        #endif
+    #endif
+        
+        
+    void Backtrace() {
+    #define BACKTRACE_MAX_STACK_DEPTH 50
+    #if SYSTEM_POSIX
+        void* callstack[BACKTRACE_MAX_STACK_DEPTH];
+        int i, frames = backtrace(callstack, BACKTRACE_MAX_STACK_DEPTH);
+        char** strs = backtrace_symbols(callstack, frames);
+        for (i = 0; i < frames; ++i) {
+            fprintf(stderr, "%s\n", strs[i]);
+        }
+        free(strs);
+    #elif SYSTEM_WINDOWS
+        UNIMPLEMENTED();
+    #endif
     }
-    free(strs);
-#elif SYSTEM_WINDOWS
-    UNIMPLEMENTED();
-#endif
-}
-    
-void assertHandler(char const *file, i32 line, char const *msg, ...) {
-    va_list args;
-    va_start(args, msg);
-    Backtrace();
-    
-    if (msg) {
-        fprintf(stderr, "Assert failure: %s:%d: ", file, line);
-        vfprintf(stderr, msg, args);
-        fprintf(stderr, "\n");
-    } else {
-        fprintf(stderr, "Assert failure: %s:%d\n", file, line);
+        
+    void assertHandler(char const *file, i32 line, char const *msg, ...) {
+        va_list args;
+        va_start(args, msg);
+        Backtrace();
+        
+        if (msg) {
+            fprintf(stderr, "Assert failure: %s:%d: ", file, line);
+            vfprintf(stderr, msg, args);
+            fprintf(stderr, "\n");
+        } else {
+            fprintf(stderr, "Assert failure: %s:%d\n", file, line);
+        }
+        va_end(args);
     }
-    va_end(args);
-}
+
 #endif
 
 
@@ -1008,6 +1012,24 @@ void test_beta()
 }
 #endif
 
+
+#ifdef u8
+    #undef u8
+    #undef u16
+    #undef u32
+    #undef u64
+
+    #undef i8
+    #undef i16
+    #undef i32
+    #undef i64
+
+    #undef f32
+    #undef f64
+
+    #undef b8
+    #undef b32
+#endif
 
 #undef PF
 #undef PF2
