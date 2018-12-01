@@ -829,12 +829,12 @@ f64 PF2(gamm)( f64 x )
 {
     double ret = (
         1.000000000190015 +
-        76.18009172947146 / (x + 1) +
-        -86.50532032941677 / (x + 2) +
-        24.01409824083091 / (x + 3) +
-        -1.231739572450155 / (x + 4) +
+        76.18009172947146    / (x + 1) +
+        -86.50532032941677   / (x + 2) +
+        24.01409824083091    / (x + 3) +
+        -1.231739572450155   / (x + 4) +
         1.208650973866179e-3 / (x + 5) +
-        -5.395239384953e-6 / (x + 6)
+        -5.395239384953e-6   / (x + 6)
     );
 
     return ret * sqrt(2*M_PI)/x * pow(x + 5.5, x+0.5) * exp(-x-5.5);
@@ -900,6 +900,20 @@ u32 PF(Bernoulli)( PRNG g, f64 p )
 }
 
 
+f64 PF(BernoulliPMF)( u32 x, f64 p )
+{
+    if ( x == 1 ) {
+        return p;
+    }
+    else if ( x == 0 ) {
+        return 1.0 - p;
+    }
+    else {
+        return 0;
+    }
+}
+
+
 #if TEST
 void test_bernoulli()
 {
@@ -922,6 +936,10 @@ void test_bernoulli()
     f64 mean = PF2(ArrayMean)( array, N );
 
     TEST_ASSERT( PF2(f64Equal)( mean, p, 0.01 ) );
+
+    f64 pmf = PF(BernoulliPMF)( 1, p );
+
+    TEST_ASSERT( PF2(f64Equal)( pmf, p, 1E-8 ) );
 
 #undef STATE
 #undef RNG
@@ -966,6 +984,46 @@ f64 PF(Beta)( PRNG g, f64 a, f64 b )
 }
 
 
+f64 PF(BetaPDF)( f64 x, f64 a, f64 b )
+{
+    if ( x < 0 || x > 1.0 || a <= 0 || b <= 0 ) {
+        return 0;
+    }
+    else {
+        f64 lgA  = PF2(gammln)( a );
+        f64 lgB  = PF2(gammln)( b );
+        f64 lgAB = PF2(gammln)( a + b );
+
+        f64 ratio = lgAB - lgA - lgB;
+
+        if ( x == 0.0 || x == 1.0 ) {
+            return exp(ratio) * pow(x, (a - 1.0)) * pow((1.0 - x), (b - 1.0));
+        }
+        else {
+            return exp( ratio + (a - 1.0) * log(x) + (b - 1.0) * log(1.0 - x) );
+
+        }
+    }
+}
+
+
+f64 PF(BetaLPDF)( f64 x, f64 a, f64 b )
+{
+    if ( x < 0 || x > 1.0 || a <= 0 || b <= 0 ) {
+        return 0;
+    }
+    else {
+        f64 lgA  = PF2(gammln)( a );
+        f64 lgB  = PF2(gammln)( b );
+        f64 lgAB = PF2(gammln)( a + b );
+
+        f64 ratio = lgAB - lgA - lgB;
+
+        return ratio + (a - 1.0) * log(x) + (b - 1.0) * log(1.0 - x);
+    }
+}
+
+
 #if TEST
 void test_beta()
 {
@@ -1004,6 +1062,12 @@ void test_beta()
 
     TEST_ASSERT( PF2(f64Equal)( mean, a/(a+b), 0.01 ) );
     TEST_ASSERT( PF2(f64Equal)( var,  a*b/((a+b)*(a+b)*(a+b+1.0)), 0.001 ) );
+
+    f64 pdf  = PF(BetaPDF)( 0.5, a, b );
+    f64 lpdf = PF(BetaLPDF)( 0.5, a, b );
+
+    TEST_ASSERT( PF2(f64Equal)( log(pdf), lpdf, 1E-6 ) );
+    TEST_ASSERT( PF2(f64Equal)( pdf, 1.168562, 1E-6 ) );
 
 #undef STATE
 #undef RNG
