@@ -1,34 +1,33 @@
-CC = clang
+CC ?= clang
 
 debug:   CFLAGS = -g -O0 -DDEBUG -std=c89
-release: CFLAGS = -O3 -march=native
+release: CFLAGS = -O3 -march=native -std=c89
 
 LFLAGS = -lm 
-DISABLED_WARNINGS = -Wno-writable-strings -Wno-switch
 
 TARGET = main
 TEST_TARGET = $(TARGET)_tests
 TEST_MAIN = $(TARGET)_tests.c
 TEST_LOG = $(TARGET)_tests.log
 
-#all: debug
+all: debug
 
-#debug:   clean $(TARGET)
-#release: clean $(TARGET)
+debug:   clean $(TARGET)
+release: clean $(TARGET)
 
-#$(TARGET):
-#	$(CC) src/main.c -o $(TARGET) $(CFLAGS) $(LFLAGS) $(DISABLED_WARNINGS)
+$(TARGET):
+	$(CC) src/main.c -o $(TARGET) $(CFLAGS) $(LFLAGS)
 
 
-tests:
+tests: debug
 	@rm -f $(TEST_TARGET) $(TEST_LOG) $(TEST_MAIN)
 	@./scripts/gen_test_main.sh > $(TEST_MAIN)
-	@$(CC) $(TEST_MAIN) -o $(TEST_TARGET) $(CFLAGS) -DTEST $(LFLAGS) $(DISABLED_WARNINGS)
+	@$(CC) $(TEST_MAIN) -o $(TEST_TARGET) $(CFLAGS) -DTEST $(LFLAGS)
 	@./$(TEST_TARGET) 2> $(TEST_LOG)
 	@rm -f $(TEST_TARGET) $(TEST_MAIN)
 
-#clean:
-#	rm -f $(TARGET)
+clean:
+	rm -f $(TARGET)
 
 .PHONY: all clean debug release tests
 

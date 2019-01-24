@@ -1080,27 +1080,6 @@ void test_beta()
 #endif
 
 
-
-
-
-#ifdef u8
-    #undef u8
-    #undef u16
-    #undef u32
-    #undef u64
-
-    #undef i8
-    #undef i16
-    #undef i32
-    #undef i64
-
-    #undef f32
-    #undef f64
-
-    #undef b8
-    #undef b32
-#endif
-
 #undef PF
 #undef PF2
 #undef SMIX
