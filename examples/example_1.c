@@ -16,7 +16,7 @@ int main( int argn, char *argv[] ) {
     
     PRNG_Jump( rng );
     
-    printf("A random integer: %llu\n", PRNG_Next( rng ));
+    printf("A random integer: %lu\n", PRNG_Next( rng ));
     
     return 0;
 }

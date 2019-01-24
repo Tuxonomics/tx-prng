@@ -1,5 +1,6 @@
 CC ?= clang
 
+tests:   CFLAGS = -g -O0 -DDEBUG -std=c99
 debug:   CFLAGS = -g -O0 -DDEBUG -std=c89
 release: CFLAGS = -O3 -march=native -std=c89
 
@@ -18,10 +19,10 @@ release: clean $(TARGET)
 $(TARGET):
 	$(CC) src/main.c -o $(TARGET) $(CFLAGS) $(LFLAGS)
 
-
-tests: debug
+tests:
 	@rm -f $(TEST_TARGET) $(TEST_LOG) $(TEST_MAIN)
 	@./scripts/gen_test_main.sh > $(TEST_MAIN)
+	@echo "$(CC) $(TEST_MAIN) -o $(TEST_TARGET) $(CFLAGS) -DTEST $(LFLAGS)"
 	@$(CC) $(TEST_MAIN) -o $(TEST_TARGET) $(CFLAGS) -DTEST $(LFLAGS)
 	@./$(TEST_TARGET) 2> $(TEST_LOG)
 	@rm -f $(TEST_TARGET) $(TEST_MAIN)
