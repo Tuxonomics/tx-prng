@@ -1,6 +1,6 @@
 CC ?= clang
 
-tests:   CFLAGS = -O0 -std=c99
+tests:   CFLAGS = -O0
 debug:   CFLAGS = -g -O0 -DDEBUG -std=c89
 release: CFLAGS = -O3 -march=native -std=c89
 

@@ -1,7 +1,7 @@
 CC  ?= clang
 CPP ?= clang++
 
-debug:   CFLAGS = -g -O0 -DDEBUG -std=c89
+debug: CFLAGS = -g -O0 -DDEBUG -std=c89
 
 LFLAGS = -lm
 
