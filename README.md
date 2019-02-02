@@ -1,4 +1,4 @@
-# prng-c
+# TX-PRNG
 [![Build Status](https://travis-ci.org/Tuxonomics/prng-c.svg?branch=master)](https://travis-ci.org/Tuxonomics/prng-c)
 
 PRNG-C provides an interface for pseudo random number generators compatible 
