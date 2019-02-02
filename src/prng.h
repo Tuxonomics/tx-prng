@@ -553,17 +553,22 @@ void test_uniform()
 
 
 // Standard normal random number with Box-Muller transform.
-// https://en.wikipedia.org/wiki/Box–Muller_transform .*/
+// from Numerical Recipes in C
+// prepared for threadsafety without static variables
 
 f64 PF(Normal)( PRNG g )
 {
-    f64 u = PF(Uniform)( g );
-    f64 v = PF(Uniform)( g );
-    
-    f64 s = sqrt( -2.0 * log( u ) );
-    f64 t = cos( 2.0 * M_PI * v );
-    
-    return s * t;
+    f64 u, v, rsq;
+
+    do {
+        u = 2.0 * PF(Uniform)( g ) - 1.0;
+        v = 2.0 * PF(Uniform)( g ) - 1.0;
+
+        rsq = u*u + v*v;
+    } while ( rsq >= 1.0 || rsq == 0.0 );
+
+
+    return u * sqrt( -2.0 * log(rsq)/rsq );
 }
 
 
@@ -857,7 +862,7 @@ void test_gamma()
 #define STATE struct PRNG_Xoshiro256StarStar
 #define RNG struct PRNG_Generator
 
-#define N 1000
+#define N 2000
 
     f64 array[N];
     
@@ -1033,7 +1038,7 @@ void test_beta()
 #define STATE struct PRNG_Xoshiro256StarStar
 #define RNG struct PRNG_Generator
 
-#define N 1000
+#define N 2000
 
     f64 array[N];
 
@@ -1064,7 +1069,7 @@ void test_beta()
     var  = PF2(ArrayVariance)( array, N );
 
     TEST_ASSERT( PF2(f64Equal)( mean, a/(a+b), 0.01 ) );
-    TEST_ASSERT( PF2(f64Equal)( var,  a*b/((a+b)*(a+b)*(a+b+1.0)), 0.001 ) );
+    TEST_ASSERT( PF2(f64Equal)( var,  a*b/((a+b)*(a+b)*(a+b+1.0)), 0.002 ) );
 
     f64 pdf  = PF(BetaPDF)( 0.5, a, b );
     f64 lpdf = PF(BetaLPDF)( 0.5, a, b );
