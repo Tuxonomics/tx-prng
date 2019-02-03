@@ -535,6 +535,32 @@ f64 PF(UniformPositive)( PRNG g )
 }
 
 
+f64 PF(UniformPDF)( f64 a, f64 b )
+{
+    return 1.0 / ( b - a );
+}
+
+
+f64 PF(UniformLPDF)( f64 a, f64 b )
+{
+    return - log( b - a );
+}
+
+
+f64 PF(UniformCDF)( f64 x, f64 a, f64 b )
+{
+    if ( x >= a || x <= b ) {
+        return ( x - a ) / ( b - a );
+    }
+    else if ( x < a ) {
+        return 0.0;
+    }
+    else {
+        return 1.0;
+    }
+}
+
+
 #if TEST
 void test_uniform()
 {
@@ -544,7 +570,11 @@ void test_uniform()
     STATE state;
     RNG rng = PF(InitXoshiro256StarStar)( &state, 3747 );
     
-    TEST_ASSERT( PRNG_Uniform( rng ) <= 1.0 );
+    TEST_ASSERT( PF(Uniform)( rng ) <= 1.0 );
+
+    TEST_ASSERT( PF(UniformPDF)( 1.0, 3.0 ) == 0.5 );
+    TEST_ASSERT( PF(UniformLPDF)( 1.0, 3.0 ) == log(0.5) );
+    TEST_ASSERT( PF(UniformCDF)( 2.0, 1.0, 3.0 ) == 0.5 );
 
 #undef STATE
 #undef RNG
@@ -593,6 +623,12 @@ f64 PF(NormalLPDF)( f64 x, f64 m, f64 s )
 }
 
 
+f64 PF(NormalCDF)( f64 x, f64 m, f64 s )
+{
+    return 0.5 * erfc( -M_SQRT1_2 * (x-m)/s );
+}
+
+
 #if TEST
 void test_normal()
 {
@@ -615,9 +651,11 @@ void test_normal()
 
     f64 pdf  = PF(NormalPDF)( 1.0, 1.0, 1.0 );
     f64 lpdf = PF(NormalLPDF)( 1.0, 1.0, 1.0 );
+    f64 cdf  = PF(NormalCDF)( 1.0, 1.0, 1.0 );
 
-    TEST_ASSERT( PF2(f64Equal)( pdf,  0.3989423,  1E-6 ) );
-    TEST_ASSERT( PF2(f64Equal)( lpdf, log( pdf ), 1E-6 ) );
+    TEST_ASSERT( PF2(f64Equal)( pdf,  0.3989423,  1E-7 ) );
+    TEST_ASSERT( PF2(f64Equal)( lpdf, log( pdf ), 1E-14 ) );
+    TEST_ASSERT( PF2(f64Equal)( cdf,  0.5,        1E-14 ) );
 #undef N
 }
 #endif
