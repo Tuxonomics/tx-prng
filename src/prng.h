@@ -673,13 +673,22 @@ f64 PF(Exponential)( PRNG g, f64 lambda )
 
 f64 PF(ExponentialPDF)( f64 x, f64 lambda )
 {
+    ASSERT( lambda > 0 && x >= 0 );
     return lambda * exp( - lambda * x );
 }
 
 
 f64 PF(ExponentialLPDF)( f64 x, f64 lambda )
 {
+    ASSERT( lambda > 0 && x >= 0 );
     return log( lambda ) - lambda * x;
+}
+
+
+f64 PF(ExponentialCDF)( f64 x, f64 lambda )
+{
+    ASSERT( lambda > 0 && x >= 0 );
+    return 1.0 - exp( - lambda * x );
 }
 
 
@@ -710,9 +719,11 @@ void test_exponential()
 
     f64 pdf  = PF(ExponentialPDF)( 0.45, lambda );
     f64 lpdf = PF(ExponentialLPDF)( 0.45, lambda );
+    f64 cdf  = PF(ExponentialCDF)( 0.45, lambda );
 
-    TEST_ASSERT( PF2(f64Equal)( pdf,        0.7245264, 1E-6 ) );
-    TEST_ASSERT( PF2(f64Equal)( log( pdf ), lpdf,      1E-6 ) );
+    TEST_ASSERT( PF2(f64Equal)( pdf,        0.7245264,          1E-7 ) );
+    TEST_ASSERT( PF2(f64Equal)( log( pdf ), lpdf,               1E-14 ) );
+    TEST_ASSERT( PF2(f64Equal)( cdf,        1.0 - pdf / lambda, 1E-14 ) );
 
 #undef STATE
 #undef RNG
