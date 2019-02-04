@@ -854,7 +854,7 @@ f64 PF2(gammln)( f64 xx )
         0.1208650973866179e-2, -0.5395239384953e-5
     };
 
-    x   = xx - 1.0;
+    x = xx - 1.0;
 
     tmp  = x + 5.5;
     tmp -= ( x + 0.5 ) * log( tmp );
@@ -902,6 +902,12 @@ f64 PF(GammaPDF)( f64 x, f64 k, f64 theta )
     } else {
         return exp(-x/theta) * pow(x, k - 1.0) * pow(theta, -k) / PF2(gamm)(k);
     }
+}
+
+
+f64 PF(GammaCDF)( f64 x, f64 k, f64 theta )
+{
+    return 0.0;
 }
 
 
@@ -1081,6 +1087,123 @@ f64 PF(BetaLPDF)( f64 x, f64 a, f64 b )
 }
 
 
+
+// From Numerical Recipes p.226
+
+f64 PF2(betacf)( f64 x, f64 a, f64 b )
+{
+#define MAXIT 512
+#define E     3.0e-7
+#define FPMIN 1.0e-30
+
+    i32 m, m2;
+    f64 aa, c, d, del, h, qab, qam, qap;
+
+    qab = a + b;
+    qap = a + 1.0;
+    qam = a - 1.0;
+
+    c = 1.0;
+    d = 1.0 - qab * x/qap;
+
+    if ( fabs(d) < FPMIN ) {
+        d=FPMIN;
+    }
+
+    d = 1.0 / d;
+    h = d;
+
+    for ( m=1; m<=MAXIT; ++m ) {
+        m2 = 2 * m;
+        aa = m * (b-m) * x / ( (qam+m2) * (a+m2) );
+
+        d = 1.0 + aa * d;
+
+        if ( fabs(d) < FPMIN ) {
+            d = FPMIN;
+        }
+
+        c = 1.0 + aa / c;
+
+        if ( fabs(c) < FPMIN ) {
+            c = FPMIN;
+        }
+
+        d = 1.0 / d;
+
+        h *= d * c;
+
+        aa = -(a+m) * (qab + m) * x / ( (a+m2) * (qap+m2) );
+
+        d = 1.0 + aa * d;
+
+        if ( fabs(d) < FPMIN ) {
+            d = FPMIN;
+        }
+
+        c = 1.0 + aa / c;
+
+        if ( fabs(c) < FPMIN ) {
+            c = FPMIN;
+        }
+
+        d = 1.0 / d;
+
+        del = d * c;
+        h  *= del;
+
+        if ( fabs(del-1.0) < E ) {
+            break;
+        }
+    }
+
+    if (m > MAXIT) {
+        return NAN;
+    }
+
+    return h;
+
+#undef MAXIT
+#undef E
+#undef FPMIN
+}
+
+
+f64 PF(BetaCDF)(f64 x, f64 a, f64 b)
+{
+    ASSERT( a > 0.0 && b > 0.0 );
+
+    f64 bt;
+
+    if ( x > 0.0 && x < 1.0 ) {
+        f64 ab  = a + b;
+
+        f64 gab = PF2(gammln)( ab );
+        f64 ga  = PF2(gammln)( a );
+        f64 gb  = PF2(gammln)( b );
+
+        bt = exp( gab - ga - gb + a*log(x) + b*log(1.0-x) );
+
+        f64 cond = ( a + 1.0 ) / ( ab + 2.0 );
+        if ( x < cond ) {
+            return bt * PF2(betacf)( x, a, b ) / a;
+        }
+        else {
+            return 1.0 - bt * PF2(betacf)( 1.0 - x, b, a ) / b;
+        }
+    }
+    else if ( x == 0.0 ) {
+        return 0.0;
+    }
+    else if ( x == 1.0 ) {
+        return 1.0;
+    }
+    else {
+        return NAN;
+    }
+}
+
+
 #if TEST
 void test_beta()
 {
@@ -1122,9 +1245,12 @@ void test_beta()
 
     f64 pdf  = PF(BetaPDF)( 0.5, a, b );
     f64 lpdf = PF(BetaLPDF)( 0.5, a, b );
+    f64 cdf  = PF(BetaCDF)( 0.5, a, b );
+
 
     TEST_ASSERT( PF2(f64Equal)( log(pdf), lpdf, 1E-6 ) );
     TEST_ASSERT( PF2(f64Equal)( pdf, 1.168562, 1E-6 ) );
+    TEST_ASSERT( PF2(f64Equal)( cdf, 0.4154809, 1E-7 ) );
 
 #undef STATE
 #undef RNG
