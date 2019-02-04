@@ -1087,7 +1087,6 @@ f64 PF(BetaLPDF)( f64 x, f64 a, f64 b )
 }
 
 
-
 // From Numerical Recipes p.226
 
 f64 PF2(betacf)( f64 x, f64 a, f64 b )
@@ -1192,10 +1191,10 @@ f64 PF(BetaCDF)(f64 x, f64 a, f64 b)
             return 1.0 - bt * PF2(betacf)( 1.0 - x, b, a ) / b;
         }
     }
-    else if ( x == 0.0 ) {
+    else if ( x <= 0.0 ) {
         return 0.0;
     }
-    else if ( x == 1.0 ) {
+    else if ( x >= 1.0 ) {
         return 1.0;
     }
     else {
