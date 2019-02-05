@@ -891,7 +891,7 @@ f64 PF2(gamm)( f64 x )
         -5.395239384953e-6   / (x + 6)
     );
 
-    return ret * sqrt(2*M_PI)/x * pow(x + 5.5, x+0.5) * exp(-x-5.5);
+    return ret * sqrt(2*M_PI)/x * pow(x+5.5, x+0.5) * exp(-x-5.5);
 }
 
 
@@ -905,10 +905,100 @@ f64 PF(GammaPDF)( f64 x, f64 k, f64 theta )
 }
 
 
+#define ITMAX 100
+#define E     3.0e-7
+#define FPMIN 1.0e-30
+
+
+f64 PF2(gser)( f64 x, f64 a )
+{
+    i32 n;
+    f64 sum, del, ap, gln;
+
+    gln = PF2(gammln)(a);
+
+    if (x <= 0.0) {
+        if ( x < 0.0 )
+            return NAN;
+        else
+            return 0.0;
+    }
+    else {
+        ap  = a;
+        del = sum = 1.0 / a;
+        for ( n=1; n<=ITMAX; ++n ) {
+            ++ap;
+            del *= x/ap;
+            sum += del;
+            if ( fabs(del) < fabs(sum) * E ) {
+                return sum * exp( -x + a*log(x) - gln );
+            }
+        }
+        return NAN;
+    }
+}
+
+
+f64 PF2(gcf)( f64 x, f64 a )
+{
+    i32 i;
+    f64 an, b, c, d, del, h, gln;
+
+    gln = PF2(gammln)(a);
+
+    b = x + 1.0 - a;
+    c = 1.0 / FPMIN;
+    d = 1.0 / b;
+    h = d;
+
+    for ( i=1; i<=ITMAX; ++i ) {
+        an = -i * (i-a);
+        b += 2.0;
+
+        d = an * d + b;
+        if (fabs(d) < FPMIN)
+            d = FPMIN;
+
+        c = b + an / c;
+        if (fabs(c) < FPMIN)
+            c = FPMIN;
+
+        d   = 1.0 / d;
+        del = d * c;
+        h  *= del;
+
+        if ( fabs(del-1.0) < E )
+            break;
+    }
+    if ( i > ITMAX )
+        return NAN;
+    else
+        return exp(-x + a*log(x) - gln) * h;
+}
+
+
 f64 PF(GammaCDF)( f64 x, f64 k, f64 theta )
 {
-    return 0.0;
+    f64 gamser, gln;
+    f64 xtheta = x / theta;
+
+    if ( x < 0.0 || k <= 0.0 ) {
+        return NAN;
+    }
+    else if ( x < (k+1.0) ) {
+        gamser = PF2(gser)( xtheta, k );
+        return gamser;
+    }
+    else {
+        gamser = PF2(gcf)( xtheta, k );
+        return 1.0 - gamser;
+    }
 }
+
+
+#undef ITMAX
+#undef E
+#undef FPMIN
 
 
 #if TEST
@@ -939,9 +1029,13 @@ void test_gamma()
 
     f64 pdf  = PF(GammaPDF)( 0.5, k, theta );
     f64 lpdf = PF(GammaLPDF)( 0.5, k, theta );
+    f64 cdf1 = PF(GammaCDF)( 0.5, k, theta );
+    f64 cdf2 = PF(GammaCDF)( 3.3, k, theta );
 
-    TEST_ASSERT( PF2(f64Equal)( log(pdf), lpdf,      1E-6 ) );
-    TEST_ASSERT( PF2(f64Equal)( pdf,      0.2821606, 1E-6 ) );
+    TEST_ASSERT( PF2(f64Equal)( log(pdf), lpdf,      1E-14 ) );
+    TEST_ASSERT( PF2(f64Equal)( pdf,      0.2821606, 1E-7 ) );
+    TEST_ASSERT( PF2(f64Equal)( cdf1,     0.1535183, 1E-7 ) );
+    TEST_ASSERT( PF2(f64Equal)( cdf2,     0.6671289, 1E-7 ) );
 
 #undef STATE
 #undef RNG
