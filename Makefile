@@ -1,4 +1,4 @@
-CC ?= clang
+CC = clang
 
 tests:   CFLAGS = -O0
 debug:   CFLAGS = -g -O0 -DDEBUG -std=c89

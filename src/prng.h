@@ -1314,7 +1314,7 @@ void test_beta()
     f64 b = 1./3.;
 
     for ( u32 i=0; i<N; ++i ) {
-        array[i] = (f64) PF(Beta)( rng, a, b );
+        array[i] = PF(Beta)( rng, a, b );
     }
 
     f64 mean = PF2(ArrayMean)( array, N );
@@ -1349,6 +1349,93 @@ void test_beta()
 #undef RNG
 #undef N
 
+}
+#endif
+
+
+/*
+Donald E. Knuth (1997) "The Art of Computer Programming:
+Seminumerical Algorithms", p. 136,
+also used by GSL
+*/
+
+u32 PF(Binomial)( PRNG g, u32 n, f64 p )
+{
+    ASSERT( 0.0 <= p && p <= 1.0 );
+
+    f64 u, x;
+    u32 k = 0, j, a, b;
+
+    while ( n > 10 ) {
+        a = 1 + (n / 2);  // according to Knuth
+        b = 1 + n - a;    // s.t. a + b - 1 == n
+
+        x = PF(Beta)( g, (f64) a, (f64) b );
+
+        if ( x >= p ) {
+            n = a - 1;
+            p = p / x;
+        }
+        else {
+            k += a;
+            n = b - 1;
+            p = (p - x) / (1 - x);
+        }
+    }
+    for ( j=0; j<n; ++j ) {
+        u = PF(Uniform)( g );
+        if ( u < p ) {
+            k += 1;
+        }
+    }
+
+    return k;
+}
+
+
+//f64 PF(BinomialPMF)( u32 x, u32 n, f64 p )
+//{
+//}
+
+
+//f64 PF(BinomialCDF)( u32 x, u32 n, f64 p )
+//{
+//}
+
+
+#if TEST
+void test_binomial()
+{
+#define STATE struct PRNG_Xoshiro256StarStar
+#define RNG struct PRNG_Generator
+
+#define N 2000
+
+    f64 array[N];
+
+    STATE state;
+    RNG rng = PF(InitXoshiro256StarStar)( &state, 371 );
+
+    u32 n = 20;
+    f64 p = 0.7;
+
+    for ( u32 i=0; i<N; ++i ) {
+        array[i] = (f64) PF(Binomial)( rng, n, p );
+    }
+
+    f64 mean = PF2(ArrayMean)( array, N );
+    f64 var  = PF2(ArrayVariance)( array, N );
+
+    TEST_ASSERT( PF2(f64Equal)( mean, (f64) n * p,         0.1 ) );
+    TEST_ASSERT( PF2(f64Equal)( var,  (f64) n * p * (1-p), 0.1 ) );
+
+
+    printf("missing pmf\n");
+    printf("missing cdf\n");
+
+#undef STATE
+#undef RNG
+#undef N
 }
 #endif
 
