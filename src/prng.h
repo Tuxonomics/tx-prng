@@ -1440,6 +1440,82 @@ void test_binomial()
 #endif
 
 
+/*
+Donald E. Knuth (1997) "The Art of Computer Programming:
+Seminumerical Algorithms", p. 137,
+also used by GSL
+*/
+
+u32 PF(Poisson)( PRNG g, f64 lambda )
+{
+    ASSERT( lambda > 0.0 );
+
+    f64 elambda, x, prod = 1.0;
+    f64 alpha = 7.0 / 8.0;
+    u32 m, k = 0;
+
+    while ( lambda > 10 ) {
+        m = lambda * alpha;
+
+        x = PF(Gamma)( g, (f64) m, 1.0 );
+
+        if ( x >= lambda ) {
+            return k + PF(Binomial)( g, m - 1, lambda / x);
+        }
+        else {
+            k      += m;
+            lambda -= x;
+        }
+    }
+
+    elambda = exp(-lambda);
+
+    do {
+        prod *= PF(Uniform)( g );
+        k    += 1;
+    } while( prod > elambda );
+
+    return k - 1;
+}
+
+
+#if TEST
+void test_poisson()
+{
+#define STATE struct PRNG_Xoshiro256StarStar
+#define RNG struct PRNG_Generator
+
+#define N 5000
+
+    f64 array[N];
+
+    STATE state;
+    RNG rng = PF(InitXoshiro256StarStar)( &state, 371 );
+
+    f64 lambda = 4.5;
+
+    for ( u32 i=0; i<N; ++i ) {
+        array[i] = (f64) PF(Poisson)( rng, lambda );
+    }
+
+    f64 mean = PF2(ArrayMean)( array, N );
+    f64 var  = PF2(ArrayVariance)( array, N );
+
+    TEST_ASSERT( PF2(f64Equal)( mean, lambda, 0.1 ) );
+    TEST_ASSERT( PF2(f64Equal)( var,  lambda, 0.1 ) );
+
+
+    printf("missing pmf\n");
+    printf("missing cdf\n");
+
+
+#undef STATE
+#undef RNG
+#undef N
+}
+#endif
+
+
 #undef PF
 #undef PF2
 #undef SMIX
